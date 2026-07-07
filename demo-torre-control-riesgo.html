@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Torre de control de riesgo social</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg: #0F2A22;
+  --bg-card: #17352A;
+  --bg-card-2: #1D3F32;
+  --paper: #F4F1E6;
+  --ink: #16211B;
+  --gold: #D9A93B;
+  --gold-deep: #8A6A1E;
+  --teal: #59B7A6;
+  --teal-deep: #1F5C51;
+  --off: #F2EFE6;
+  --off-dim: #9FB3AA;
+  --brick: #C46A3F;
+  --brick-deep: #A3502F;
+  --amber: #E0B23C;
+  --line: rgba(242,239,230,0.14);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background: var(--bg);
+  color: var(--off);
+  font-family: 'Inter', sans-serif;
+  min-height:100vh;
+  padding: 44px 24px 80px;
+}
+.wrap{max-width: 1040px; margin: 0 auto;}
+
+.topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;}
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 12px; letter-spacing:0.12em; text-transform:uppercase;
+  color: var(--gold); margin: 0 0 14px;
+}
+h1{
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 36px;
+  line-height: 1.15; margin: 0 0 8px; color: var(--off);
+}
+.sub{font-size: 15px; color: var(--off-dim); max-width: 560px; line-height: 1.6; margin: 0 0 32px;}
+
+.live{
+  display:flex; align-items:center; gap: 8px;
+  font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--off-dim);
+  margin-top: 6px;
+}
+.dot{width:8px; height:8px; border-radius:50%; background: var(--teal); animation: pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.25;}}
+
+.stats{display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px;}
+.stat{
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 18px;
+}
+.stat-lbl{font-size: 12px; color: var(--off-dim); margin: 0 0 6px;}
+.stat-num{font-family:'Fraunces', serif; font-size: 30px; font-weight:500; margin:0; color: var(--off);}
+.stat-num.alto{color: var(--brick);}
+.stat-num.gold{color: var(--gold);}
+.stat-num.teal{color: var(--teal);}
+
+.panel{
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px 26px; margin-bottom: 20px;
+}
+.panel-head{display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;}
+.panel-title{font-family:'IBM Plex Mono', monospace; font-size: 12px; letter-spacing:0.08em; text-transform:uppercase; color: var(--off-dim); margin:0;}
+
+.filters{display:flex; gap: 8px; flex-wrap:wrap;}
+.filter{
+  font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--off-dim);
+  background: rgba(0,0,0,0.18); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 14px; cursor:pointer; transition: all 0.15s;
+}
+.filter.active{background: var(--gold); color: var(--ink); border-color: var(--gold); font-weight:500;}
+.filter:hover:not(.active){border-color: var(--teal); color: var(--off);}
+
+.trend{display:flex; align-items:flex-end; gap: 12px; height: 120px; padding-top: 10px;}
+.tbar-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;}
+.tbar-track{width: 100%; height: 90px; display:flex; align-items:flex-end;}
+.tbar{width: 100%; border-radius: 4px 4px 0 0; background: var(--teal-deep); transition: height 0.8s ease;}
+.tbar.hi{background: var(--brick-deep);}
+.tbar-lbl{font-family:'IBM Plex Mono', monospace; font-size: 10px; color: var(--off-dim);}
+
+table.cases{width:100%; border-collapse: collapse; font-size: 13.5px;}
+table.cases th{
+  text-align:left; font-family:'IBM Plex Mono', monospace; font-size: 11px;
+  text-transform:uppercase; letter-spacing:0.04em; color: var(--off-dim);
+  border-bottom: 1px solid var(--line); padding: 8px 10px 8px 0;
+}
+table.cases td{padding: 11px 10px 11px 0; border-bottom: 1px solid rgba(242,239,230,0.06); color: var(--off);}
+.sem{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px;}
+.sem.alto{background: var(--brick);}
+.sem.medio{background: var(--amber);}
+.sem.bajo{background: var(--teal);}
+.score{font-family:'IBM Plex Mono', monospace; font-size: 12.5px;}
+.badge{
+  font-family:'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 9px;
+  border-radius: 999px; display:inline-block;
+}
+.badge.alto{background: rgba(196,106,63,0.22); color: #E9A47F;}
+.badge.medio{background: rgba(224,178,60,0.2); color: var(--amber);}
+.badge.bajo{background: rgba(89,183,166,0.2); color: var(--teal);}
+.row-hidden{display:none;}
+
+.foot-note{font-size: 12px; color: var(--off-dim); margin-top: 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <p class="eyebrow">Hermosa &amp; Asociados · demo en vivo</p>
+      <h1>Torre de control de<br>riesgo social</h1>
+    </div>
+  </div>
+  <p class="sub">Seguimiento nominal de beneficiarios por territorio. El modelo predictivo prioriza qué familias, niños o productores necesitan intervención antes de que el riesgo se convierta en crisis.</p>
+  <p class="live"><span class="dot"></span> Actualizado hace instantes · 4 departamentos conectados</p>
+
+  <div style="height:24px;"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <p class="stat-lbl">Beneficiarios monitoreados</p>
+      <p class="stat-num">2.418</p>
+    </div>
+    <div class="stat">
+      <p class="stat-lbl">Riesgo alto activo</p>
+      <p class="stat-num alto" id="stat-alto">31</p>
+    </div>
+    <div class="stat">
+      <p class="stat-lbl">Intervenciones en curso</p>
+      <p class="stat-num gold">57</p>
+    </div>
+    <div class="stat">
+      <p class="stat-lbl">Cobertura territorial</p>
+      <p class="stat-num teal">4 deptos.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <p class="panel-title">Alertas de riesgo alto · últimos 6 meses</p>
+    </div>
+    <div class="trend" id="trend"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <p class="panel-title">Casos priorizados</p>
+      <div class="filters">
+        <div class="filter active" data-filter="todos">Todos</div>
+        <div class="filter" data-filter="alto">Riesgo alto</div>
+        <div class="filter" data-filter="medio">Riesgo medio</div>
+        <div class="filter" data-filter="bajo">Riesgo bajo</div>
+      </div>
+    </div>
+    <table class="cases">
+      <thead>
+        <tr><th>Código</th><th>Municipio</th><th>Programa</th><th>Riesgo</th><th>Score</th><th>Última alerta</th></tr>
+      </thead>
+      <tbody id="cases-body"></tbody>
+    </table>
+    <p class="foot-note">Códigos anonimizados para proteger la identidad de los beneficiarios.</p>
+  </div>
+
+</div>
+
+<script>
+const trendData = [
+  {m:'Feb', v:14}, {m:'Mar', v:19}, {m:'Abr', v:23}, {m:'May', v:18}, {m:'Jun', v:27}, {m:'Jul', v:31}
+];
+const maxV = Math.max(...trendData.map(d=>d.v));
+const trendEl = document.getElementById('trend');
+trendData.forEach((d, i)=>{
+  const col = document.createElement('div'); col.className = 'tbar-col';
+  const track = document.createElement('div'); track.className = 'tbar-track';
+  const bar = document.createElement('div');
+  bar.className = 'tbar' + (i === trendData.length - 1 ? ' hi' : '');
+  bar.style.height = '0%';
+  track.appendChild(bar);
+  const lbl = document.createElement('div'); lbl.className = 'tbar-lbl'; lbl.textContent = d.m + ' · ' + d.v;
+  col.appendChild(track); col.appendChild(lbl); trendEl.appendChild(col);
+  requestAnimationFrame(()=>{ setTimeout(()=>{ bar.style.height = (d.v/maxV*100) + '%'; }, 150 + i*80); });
+});
+
+const cases = [
+  ['BN-0231','Ipiales, Nariño','Seguridad alimentaria','alto',86,'Hace 2 días'],
+  ['BN-0198','Popayán, Cauca','Primera infancia','alto',81,'Hace 3 días'],
+  ['BN-0304','Quibdó, Chocó','Deserción escolar','alto',78,'Hace 1 día'],
+  ['BN-0112','Armenia, Quindío','Emprendimiento rural','medio',54,'Hace 5 días'],
+  ['BN-0267','Tumaco, Nariño','Primera infancia','alto',74,'Hace 4 días'],
+  ['BN-0155','Santander de Quilichao, Cauca','Seguridad alimentaria','medio',48,'Hace 6 días'],
+  ['BN-0089','Istmina, Chocó','Emprendimiento rural','bajo',22,'Hace 9 días'],
+  ['BN-0342','Calarcá, Quindío','Primera infancia','medio',51,'Hace 4 días'],
+  ['BN-0201','Pasto, Nariño','Deserción escolar','bajo',18,'Hace 11 días'],
+  ['BN-0276','Buenaventura, Cauca','Seguridad alimentaria','alto',82,'Hace 2 días'],
+  ['BN-0158','Quimbaya, Quindío','Emprendimiento rural','bajo',15,'Hace 14 días'],
+  ['BN-0319','Condoto, Chocó','Primera infancia','medio',46,'Hace 7 días']
+];
+
+const tbody = document.getElementById('cases-body');
+cases.forEach(([code, mun, prog, risk, score, alerta])=>{
+  const tr = document.createElement('tr'); tr.dataset.risk = risk;
+  tr.innerHTML = `
+    <td>${code}</td>
+    <td>${mun}</td>
+    <td>${prog}</td>
+    <td><span class="sem ${risk}"></span><span class="badge ${risk}">${risk === 'alto' ? 'Alto' : risk === 'medio' ? 'Medio' : 'Bajo'}</span></td>
+    <td class="score">${score}</td>
+    <td>${alerta}</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+document.querySelectorAll('.filter').forEach(f=>{
+  f.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));
+    f.classList.add('active');
+    const val = f.dataset.filter;
+    document.querySelectorAll('#cases-body tr').forEach(row=>{
+      row.classList.toggle('row-hidden', val !== 'todos' && row.dataset.risk !== val);
+    });
+  });
+});
+</script>
+</body>
+</html>
