@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>IA generativa para gerencia de proyectos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1E2333;
+    --paper:#FAFAF7;
+    --line:#E4E2DA;
+
+    --c-assist:#2F8F6B;   --c-assist-bg:#EAF6EF;  --c-assist-deep:#123B2C;
+    --c-plat:#6B4FD6;     --c-plat-bg:#F1EDFC;    --c-plat-deep:#2C2058;
+    --c-meet:#C77B2C;     --c-meet-bg:#FCF1E2;    --c-meet-deep:#4A2E0E;
+    --c-data:#C24A45;     --c-data-bg:#FBEAE8;    --c-data-deep:#4A1815;
+    --c-auto:#2C74B3;     --c-auto-bg:#E9F2FA;    --c-auto-deep:#12293F;
+    --c-use:#8A7B5C;      --c-use-bg:#F4F0E6;     --c-use-deep:#332C1C;
+    --c-cta:#1F6E52;      --c-cta-bg:#E4F3EC;
+
+    --shadow: 0 1px 2px rgba(30,35,51,.04), 0 8px 20px -8px rgba(30,35,51,.12);
+    --shadow-hover: 0 4px 10px rgba(30,35,51,.06), 0 16px 32px -10px rgba(30,35,51,.20);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    padding:28px 18px 60px;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;}
+
+  .eyebrow{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:11px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+    opacity:.55;
+  }
+
+  /* ---- Header ---- */
+  .header{
+    background:#EFEDE4; border:1px solid var(--line); border-radius:16px;
+    padding:20px 24px; text-align:center; margin-bottom:16px;
+    opacity:0; transform:translateY(10px);
+    animation:rise .5s ease forwards;
+  }
+  .header h1{
+    font-family:'Space Grotesk',sans-serif; font-size:22px; margin:2px 0 6px; font-weight:700;
+  }
+  .header p{margin:0; font-size:13.5px; opacity:.65;}
+
+  /* ---- Section band ---- */
+  .band{
+    border:1px solid var(--line); border-radius:14px;
+    padding:14px 20px; margin:14px 0 12px; cursor:pointer;
+    text-align:center; user-select:none;
+    transition: box-shadow .25s ease, transform .15s ease;
+    opacity:0; transform:translateY(10px);
+    animation:rise .5s ease forwards;
+  }
+  .band:hover{box-shadow:var(--shadow-hover); transform:translateY(-1px);}
+  .band:active{transform:translateY(0);}
+  .band h2{
+    font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; margin:0 0 3px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .band p{margin:0; font-size:12.5px; opacity:.7;}
+  .chevron{
+    display:inline-block; width:9px; height:9px; border-right:2px solid currentColor; border-bottom:2px solid currentColor;
+    transform:rotate(45deg); transition:transform .35s ease; opacity:.6;
+  }
+  .band.collapsed .chevron{transform:rotate(-45deg);}
+
+  .assist{background:var(--c-assist-bg); color:var(--c-assist-deep);}
+  .plat{background:var(--c-plat-bg); color:var(--c-plat-deep);}
+  .meet{background:var(--c-meet-bg); color:var(--c-meet-deep);}
+  .data-band{background:var(--c-data-bg); color:var(--c-data-deep);}
+  .auto-band{background:var(--c-auto-bg); color:var(--c-auto-deep);}
+  .use-band{background:var(--c-use-bg); color:var(--c-use-deep);}
+
+  /* ---- Grid of cards ---- */
+  .grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+    margin-bottom:6px;
+    overflow:hidden;
+    max-height:600px;
+    transition:max-height .45s ease, opacity .35s ease, margin .45s ease;
+  }
+  .grid.split-2{grid-template-columns:repeat(2,1fr);}
+  .grid.collapsed{max-height:0; opacity:0; margin-bottom:0;}
+
+  .card{
+    perspective:800px; height:120px;
+  }
+  .card-inner{
+    position:relative; width:100%; height:100%;
+    transition:transform .55s cubic-bezier(.4,.2,.2,1);
+    transform-style:preserve-3d;
+    opacity:0; transform:translateY(8px);
+    animation:rise .45s ease forwards;
+  }
+  .card.flipped .card-inner{transform:rotateY(180deg) translateY(0) !important;}
+
+  .face{
+    position:absolute; inset:0; border-radius:12px; border:1px solid;
+    padding:12px 13px; backface-visibility:hidden;
+    display:flex; flex-direction:column; justify-content:center;
+    cursor:pointer;
+    transition:box-shadow .2s ease, transform .2s ease;
+  }
+  .face:hover{box-shadow:var(--shadow-hover); transform:translateY(-2px);}
+  .face-front{position:relative;}
+  .face-back{transform:rotateY(180deg); display:flex; align-items:center;}
+
+  .face-front .name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; margin-bottom:4px;}
+  .face-front .desc{font-size:11.5px; line-height:1.3; opacity:.75;}
+  .face-back .detail{font-size:11.5px; line-height:1.35;}
+  .tap-hint{
+    position:absolute; bottom:6px; right:9px; font-size:9px; opacity:.4; font-weight:600;
+    letter-spacing:.04em;
+  }
+
+  .assist-card{background:var(--c-assist-bg); border-color:#cfe9db; color:var(--c-assist-deep);}
+  .plat-card{background:var(--c-plat-bg); border-color:#dad2f5; color:var(--c-plat-deep);}
+  .meet-card{background:var(--c-meet-bg); border-color:#f3ddb9; color:var(--c-meet-deep);}
+  .data-card{background:var(--c-data-bg); border-color:#f2cfcb; color:var(--c-data-deep);}
+  .auto-card{background:var(--c-auto-bg); border-color:#c9dff2; color:var(--c-auto-deep);}
+
+  .assist-card .face-back{background:var(--c-assist); color:#fff; border-color:var(--c-assist);}
+  .plat-card .face-back{background:var(--c-plat); color:#fff; border-color:var(--c-plat);}
+  .meet-card .face-back{background:var(--c-meet); color:#fff; border-color:var(--c-meet);}
+  .data-card .face-back{background:var(--c-data); color:#fff; border-color:var(--c-data);}
+  .auto-card .face-back{background:var(--c-auto); color:#fff; border-color:var(--c-auto);}
+
+  /* ---- Use case columns ---- */
+  .use-wrap{
+    max-height:900px; overflow:hidden;
+    transition:max-height .45s ease, opacity .35s ease, margin .45s ease;
+  }
+  .use-wrap.collapsed{max-height:0; opacity:0; margin-bottom:0;}
+  .use-cols{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;
+  }
+  .use-col{
+    background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+    opacity:0; transform:translateY(8px); animation:rise .45s ease forwards;
+  }
+  .use-col h3{
+    font-family:'Space Grotesk',sans-serif; font-size:14px; margin:0 0 8px; font-weight:700;
+  }
+  .use-col ul{margin:0; padding-left:16px; font-size:12px; line-height:1.75; opacity:.8;}
+  .use-col li{cursor:pointer; transition:color .15s ease, transform .15s ease; list-style:disc;}
+  .use-col li:hover{color:var(--c-use-deep); transform:translateX(2px);}
+  .use-col li.done{ text-decoration:line-through; opacity:.45; }
+
+  /* ---- CTA ---- */
+  .cta{
+    background:var(--c-cta-bg); border:1px solid #bfe0cf; border-radius:14px;
+    padding:18px 20px; text-align:center; cursor:pointer; color:var(--c-cta);
+    transition:box-shadow .2s ease, transform .15s ease;
+    opacity:0; transform:translateY(8px); animation:rise .5s ease forwards;
+  }
+  .cta:hover{box-shadow:var(--shadow-hover); transform:translateY(-2px);}
+  .cta h2{font-family:'Space Grotesk',sans-serif; font-size:15px; margin:0 0 4px;}
+  .cta p{margin:0; font-size:12.5px; opacity:.75;}
+
+  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+
+  @media (max-width:640px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .use-cols{grid-template-columns:1fr;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important; transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header" style="animation-delay:.02s">
+    <div class="eyebrow">Caja de herramientas</div>
+    <h1>IA generativa para gerencia de proyectos</h1>
+    <p>Herramientas organizadas por uso · toca cada sección para explorar · toca una tarjeta para ver el detalle</p>
+  </div>
+
+  <!-- Asistentes -->
+  <div class="band assist" data-target="g-assist" style="animation-delay:.05s">
+    <h2>Asistentes generales de IA <span class="chevron"></span></h2>
+    <p>Redactan, analizan y responden · sirven para casi cualquier tarea del proyecto</p>
+  </div>
+  <div class="grid" id="g-assist">
+    <div class="card" style="animation-delay:.08s"><div class="card-inner">
+      <div class="face face-front assist-card"><div class="name">ChatGPT</div><div class="desc">Actas, informes, planes, riesgos</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back assist-card"><div class="detail">Ideal para redactar rápido y explorar varias versiones de un mismo documento.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.11s"><div class="card-inner">
+      <div class="face face-front assist-card"><div class="name">Claude</div><div class="desc">Análisis largo, documentos, EDT</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back assist-card"><div class="detail">Mejor para leer documentos extensos completos y mantener el hilo en tareas largas.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.14s"><div class="card-inner">
+      <div class="face face-front assist-card"><div class="name">Gemini</div><div class="desc">Google Workspace, cronogramas</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back assist-card"><div class="detail">Conveniente si tu proyecto ya vive en Docs, Sheets y Calendar.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.17s"><div class="card-inner">
+      <div class="face face-front assist-card"><div class="name">MS Copilot</div><div class="desc">Word, Excel, Teams, PowerPoint</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back assist-card"><div class="detail">La opción natural si el equipo trabaja principalmente en Microsoft 365.</div></div>
+    </div></div>
+  </div>
+
+  <!-- Plataformas -->
+  <div class="band plat" data-target="g-plat" style="animation-delay:.05s">
+    <h2>Plataformas de gestión con IA integrada <span class="chevron"></span></h2>
+    <p>Software de PM que ya incluye IA para tareas, cronogramas y seguimiento</p>
+  </div>
+  <div class="grid" id="g-plat">
+    <div class="card" style="animation-delay:.08s"><div class="card-inner">
+      <div class="face face-front plat-card"><div class="name">ClickUp Brain</div><div class="desc">Preguntas sobre el proyecto en lenguaje natural</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back plat-card"><div class="detail">Responde con contexto de tus propias tareas, sin salir de la plataforma.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.11s"><div class="card-inner">
+      <div class="face face-front plat-card"><div class="name">Asana AI</div><div class="desc">Etiquetas auto, carga de trabajo, obstáculos</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back plat-card"><div class="detail">Detecta cuellos de botella antes de que afecten la fecha de entrega.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.14s"><div class="card-inner">
+      <div class="face face-front plat-card"><div class="name">monday.com IA</div><div class="desc">Automatización, flujos, tableros inteligentes</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back plat-card"><div class="detail">Convierte reglas repetitivas de tablero en automatizaciones sin código.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.17s"><div class="card-inner">
+      <div class="face face-front plat-card"><div class="name">Notion AI</div><div class="desc">Documentación, resúmenes, bases de datos</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back plat-card"><div class="detail">Muy útil cuando la documentación del proyecto vive toda en un solo workspace.</div></div>
+    </div></div>
+  </div>
+
+  <!-- Reuniones -->
+  <div class="band meet" data-target="g-meet" style="animation-delay:.05s">
+    <h2>Reuniones, actas y comunicación <span class="chevron"></span></h2>
+    <p>Transcriben reuniones, generan actas y resúmenes automáticos</p>
+  </div>
+  <div class="grid" id="g-meet">
+    <div class="card" style="animation-delay:.08s"><div class="card-inner">
+      <div class="face face-front meet-card"><div class="name">Otter.ai</div><div class="desc">Transcripción en tiempo real, actas automáticas</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back meet-card"><div class="detail">Sigue la conversación en vivo, útil para reuniones largas con varios temas.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.11s"><div class="card-inner">
+      <div class="face face-front meet-card"><div class="name">Fireflies.ai</div><div class="desc">Graba, transcribe y extrae tareas de la reunión</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back meet-card"><div class="detail">Convierte lo dicho directamente en tareas asignables al final de la llamada.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.14s"><div class="card-inner">
+      <div class="face face-front meet-card"><div class="name">Gemini en Meet</div><div class="desc">Notas auto, traducción de voz, resúmenes</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back meet-card"><div class="detail">Rompe barreras de idioma en equipos distribuidos internacionalmente.</div></div>
+    </div></div>
+    <div class="card" style="animation-delay:.17s"><div class="card-inner">
+      <div class="face face-front meet-card"><div class="name">Copilot en Teams</div><div class="desc">Resumen de chat, puntos de acción, seguimiento</div><span class="tap-hint">TOCAR</span></div>
+      <div class="face face-back meet-card"><div class="detail">Recupera el contexto de un hilo largo de Teams en segundos.</div></div>
+    </div></div>
+  </div>
+
+  <!-- Analisis y Automatizacion -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div>
+      <div class="band data-band" data-target="g-data" style="animation-delay:.05s">
+        <h2>Análisis y datos <span class="chevron"></span></h2>
+        <p>Tableros, predicciones, riesgos</p>
+      </div>
+      <div class="grid split-2" id="g-data">
+        <div class="card" style="animation-delay:.08s"><div class="card-inner">
+          <div class="face face-front data-card"><div class="name">Power BI + IA</div><div class="desc">Dashboards con lenguaje natural, alertas automáticas</div><span class="tap-hint">TOCAR</span></div>
+          <div class="face face-back data-card"><div class="detail">Pregúntale al tablero en español y obtén el gráfico al instante.</div></div>
+        </div></div>
+        <div class="card" style="animation-delay:.11s"><div class="card-inner">
+          <div class="face face-front data-card"><div class="name">Smartsheet AI</div><div class="desc">Plantillas dinámicas, predicción de plazos, análisis de riesgos</div><span class="tap-hint">TOCAR</span></div>
+          <div class="face face-back data-card"><div class="detail">Anticipa retrasos comparando el avance real contra el plan original.</div></div>
+        </div></div>
+      </div>
+    </div>
+    <div>
+      <div class="band auto-band" data-target="g-auto" style="animation-delay:.05s">
+        <h2>Automatización <span class="chevron"></span></h2>
+        <p>Flujos sin código, notificaciones</p>
+      </div>
+      <div class="grid split-2" id="g-auto">
+        <div class="card" style="animation-delay:.08s"><div class="card-inner">
+          <div class="face face-front auto-card"><div class="name">Zapier + IA</div><div class="desc">Conecta apps, automatiza tareas entre plataformas</div><span class="tap-hint">TOCAR</span></div>
+          <div class="face face-back auto-card"><div class="detail">Une herramientas que no se hablan entre sí de forma nativa.</div></div>
+        </div></div>
+        <div class="card" style="animation-delay:.11s"><div class="card-inner">
+          <div class="face face-front auto-card"><div class="name">Make (Integromat)</div><div class="desc">Flujos visuales, reportes automáticos a stakeholders</div><span class="tap-hint">TOCAR</span></div>
+          <div class="face face-back auto-card"><div class="detail">Mapa visual del flujo, útil cuando la automatización tiene muchos pasos.</div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Que puede hacer -->
+  <div class="band use-band" data-target="g-use" style="animation-delay:.05s; margin-top:14px;">
+    <h2>Qué puede hacer la IA en tu proyecto <span class="chevron"></span></h2>
+    <p>Casos de uso más comunes en la práctica · toca un ítem para marcarlo</p>
+  </div>
+  <div class="use-wrap" id="g-use">
+    <div class="use-cols">
+      <div class="use-col" style="animation-delay:.08s">
+        <h3>Planificación</h3>
+        <ul>
+          <li>Generar acta de constitución</li>
+          <li>Crear EDT / WBS</li>
+          <li>Estimar costos y plazos</li>
+          <li>Identificar riesgos</li>
+          <li>Redactar plan de proyecto</li>
+          <li>Generar cronogramas</li>
+          <li>Definir KPIs del proyecto</li>
+          <li>Modelar escenarios</li>
+        </ul>
+      </div>
+      <div class="use-col" style="animation-delay:.11s">
+        <h3>Ejecución y control</h3>
+        <ul>
+          <li>Transcribir reuniones</li>
+          <li>Generar actas automáticas</li>
+          <li>Resumir avances</li>
+          <li>Detectar retrasos</li>
+          <li>Actualizar estado de tareas</li>
+          <li>Alertas de desviación</li>
+          <li>Redistribuir recursos</li>
+          <li>Informes de avance</li>
+        </ul>
+      </div>
+      <div class="use-col" style="animation-delay:.14s">
+        <h3>Comunicación</h3>
+        <ul>
+          <li>Emails a stakeholders</li>
+          <li>Presentaciones PPT</li>
+          <li>Reportes ejecutivos</li>
+          <li>Minutas de reunión</li>
+          <li>Propuestas de proyecto</li>
+          <li>Gestión del cambio</li>
+          <li>Manuales y guías</li>
+          <li>Encuestas de satisfacción</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta" id="cta" style="animation-delay:.2s">
+    <h2>¿Quieres un ejemplo práctico? Toca aquí ↗</h2>
+    <p>Claude puede ayudarte a construir cualquier entregable de tu proyecto ahora mismo</p>
+  </div>
+
+</div>
+
+<script>
+  // Flip cards
+  document.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('click', ()=> card.classList.toggle('flipped'));
+  });
+
+  // Collapsible sections
+  document.querySelectorAll('.band').forEach(band=>{
+    band.addEventListener('click', ()=>{
+      const id = band.getAttribute('data-target');
+      const target = document.getElementById(id);
+      band.classList.toggle('collapsed');
+      target.classList.toggle('collapsed');
+    });
+  });
+
+  // Checklist toggle
+  document.querySelectorAll('.use-col li').forEach(li=>{
+    li.addEventListener('click', ()=> li.classList.toggle('done'));
+  });
+
+  // CTA sends a message into the chat
+  document.getElementById('cta').addEventListener('click', ()=>{
+    if (window.sendPrompt){
+      window.sendPrompt('Dame un ejemplo práctico de cómo usar IA en la gestión de mi proyecto actual.');
+    }
+  });
+</script>
+</body>
+</html>
